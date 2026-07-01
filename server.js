@@ -9,6 +9,8 @@ import bcrypt from 'bcryptjs'
 import nodemailer from 'nodemailer'
 import { v2 as cloudinary } from 'cloudinary'
 import mongoose from 'mongoose'
+import sharp from 'sharp'
+import ffmpeg from 'fluent-ffmpeg'
 import connectDB from './db.js'
 
 dotenv.config()
@@ -53,6 +55,18 @@ const upload = multer({
       cb(null, true)
     } else {
       cb(new Error('Only image files are allowed'))
+    }
+  },
+})
+
+const mediaUpload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for media
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/') || file.mimetype.startsWith('audio/')) {
+      cb(null, true)
+    } else {
+      cb(new Error('Only image, video, or audio files are allowed'))
     }
   },
 })
@@ -429,6 +443,58 @@ app.post('/api/contact', async (req, res) => {
 
     res.status(201).json({ message: 'Contact message received', data: message })
   } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})
+
+app.post('/api/convert', mediaUpload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' })
+  }
+
+  try {
+    const inputPath = req.file.path
+    let outputPath = ''
+    let outputFilename = ''
+
+    if (req.file.mimetype.startsWith('image/')) {
+      // Convert image to webp
+      outputFilename = `converted-${Date.now()}.webp`
+      outputPath = path.join(uploadDir, outputFilename)
+      await sharp(inputPath).webp({ quality: 80 }).toFile(outputPath)
+      
+      fs.unlinkSync(inputPath)
+      
+      return res.json({ 
+        message: 'Image converted successfully', 
+        url: `/uploads/${outputFilename}` 
+      })
+    } else if (req.file.mimetype.startsWith('video/') || req.file.mimetype.startsWith('audio/')) {
+      const isVideo = req.file.mimetype.startsWith('video/')
+      const ext = isVideo ? 'mp4' : 'mp3'
+      outputFilename = `converted-${Date.now()}.${ext}`
+      outputPath = path.join(uploadDir, outputFilename)
+
+      ffmpeg(inputPath)
+        .toFormat(ext)
+        .on('end', () => {
+          fs.unlinkSync(inputPath)
+          res.json({ 
+            message: 'Media converted successfully', 
+            url: `/uploads/${outputFilename}` 
+          })
+        })
+        .on('error', (err) => {
+          console.error('FFmpeg error:', err)
+          if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath)
+          res.status(500).json({ message: 'Error converting media' })
+        })
+        .save(outputPath)
+    }
+  } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path)
+    }
     res.status(500).json({ message: error.message })
   }
 })

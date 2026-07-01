@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import emailjs from '@emailjs/browser'
 import './App.css'
-import humanImage from './asstes/human.jpeg'
+import profileImage from './asstes/image.jpg'
 import {
   FiMenu,
   FiX,
@@ -169,7 +169,9 @@ const App = () => {
                     <div className="ring ring-3"></div>
                     <div className="ring ring-2"></div>
                     <div className="ring ring-1"></div>
-                    <img src={humanImage} alt="Portrait of Balaji" className="profile-img" />
+                    <div className="profile-img-wrapper">
+                      <img src={profileImage} alt="Portrait of Balaji" className="profile-img" />
+                    </div>
                   </div>
                 </div>
               </div>
