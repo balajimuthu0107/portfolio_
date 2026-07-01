@@ -458,15 +458,31 @@ app.post('/api/convert', mediaUpload.single('file'), async (req, res) => {
     let outputFilename = ''
 
     if (req.file.mimetype.startsWith('image/')) {
-      // Convert image to webp
-      outputFilename = `converted-${Date.now()}.webp`
+      let format = 'webp'
+      let sharpMethod = 'webp'
+      let sharpOptions = { quality: 80 }
+
+      if (req.file.mimetype === 'image/jpeg' || req.file.mimetype === 'image/jpg') {
+        format = 'png'
+        sharpMethod = 'png'
+        sharpOptions = {}
+      } else if (req.file.mimetype === 'image/png') {
+        format = 'webp'
+        sharpMethod = 'webp'
+      } else if (req.file.mimetype === 'image/webp') {
+        format = 'jpg'
+        sharpMethod = 'jpeg'
+      }
+
+      outputFilename = `converted-${Date.now()}.${format}`
       outputPath = path.join(uploadDir, outputFilename)
-      await sharp(inputPath).webp({ quality: 80 }).toFile(outputPath)
+      
+      await sharp(inputPath)[sharpMethod](sharpOptions).toFile(outputPath)
       
       fs.unlinkSync(inputPath)
       
       return res.json({ 
-        message: 'Image converted successfully', 
+        message: `Image converted to ${format.toUpperCase()} successfully`, 
         url: `/uploads/${outputFilename}` 
       })
     } else if (req.file.mimetype.startsWith('video/') || req.file.mimetype.startsWith('audio/')) {
