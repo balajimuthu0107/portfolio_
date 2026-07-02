@@ -18,6 +18,7 @@ const navItems = [
   { label: 'About', href: '#about' },
   { label: 'Skills', href: '#skills' },
   { label: 'Projects', href: '#projects' },
+  { label: 'Converter', href: '#converter' },
   { label: 'Contact', href: '#contact' },
 ]
 
@@ -49,13 +50,47 @@ const projects = [
     tags: ['UI/UX', 'Responsive', 'CSS'],
     github: 'https://github.com/',
   },
+
 ]
 
 const App = () => {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeSkill, setActiveSkill] = useState(null)
   const [status, setStatus] = useState('')
+  const [convertStatus, setConvertStatus] = useState('')
+  const [convertedUrl, setConvertedUrl] = useState('')
+  const [convertFile, setConvertFile] = useState(null)
   const formRef = useRef(null)
+
+  const handleConvert = async (e) => {
+    e.preventDefault()
+    if (!convertFile) return
+
+    setConvertStatus('converting')
+    setConvertedUrl('')
+
+    const formData = new FormData()
+    formData.append('file', convertFile)
+
+    try {
+      const res = await fetch('http://localhost:5000/api/convert', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+
+      if (res.ok) {
+        setConvertStatus('success')
+        setConvertedUrl(`http://localhost:5000${data.url}`)
+      } else {
+        setConvertStatus('error')
+        console.error(data.message)
+      }
+    } catch (error) {
+      setConvertStatus('error')
+      console.error(error)
+    }
+  }
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -291,6 +326,51 @@ const App = () => {
                 </a>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section id="converter" className="section-card scroll-mt-24 mt-10 rounded-3xl p-8 shadow-xl shadow-slate-950/10 backdrop-blur-md md:p-12">
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-cyan-300">Tools</p>
+              <h2 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">Media Converter.</h2>
+            </div>
+            <p className="max-w-2xl text-slate-300">
+              Upload an image to convert it instantly (JPG → PNG, PNG → WebP, WebP → JPG).
+            </p>
+          </div>
+          
+          <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-lg shadow-slate-950/20">
+            <form onSubmit={handleConvert} className="space-y-5">
+              <label className="block text-sm font-medium text-slate-200">
+                Select File
+                <input
+                  type="file"
+                  onChange={(e) => setConvertFile(e.target.files[0])}
+                  required
+                  className="mt-3 block w-full text-sm text-slate-300 file:mr-4 file:rounded-full file:border-0 file:bg-cyan-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-950 hover:file:bg-cyan-400"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={convertStatus === 'converting' || !convertFile}
+                className="inline-flex items-center justify-center rounded-full bg-cyan-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {convertStatus === 'converting' ? 'Converting...' : 'Convert File'}
+              </button>
+            </form>
+
+            {convertStatus === 'success' && convertedUrl && (
+              <div className="mt-6 rounded-2xl bg-slate-900 p-4 border border-cyan-500/30">
+                <p className="text-cyan-300 mb-3">Conversion successful!</p>
+                <a href={convertedUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-white bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-xl transition">
+                  <FiDownload /> Download Converted File
+                </a>
+              </div>
+            )}
+            {convertStatus === 'error' && (
+              <p className="mt-4 text-sm text-red-400">Error converting file. Make sure your server is running.</p>
+            )}
           </div>
         </section>
 
