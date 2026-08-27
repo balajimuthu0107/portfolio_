@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react'
-import emailjs from '@emailjs/browser'
 import './App.css'
 import profileImage from './asstes/image.jpg'
 import {
@@ -18,7 +17,6 @@ const navItems = [
   { label: 'About', href: '#about' },
   { label: 'Skills', href: '#skills' },
   { label: 'Projects', href: '#projects' },
-  { label: 'Converter', href: '#converter' },
   { label: 'Contact', href: '#contact' },
 ]
 
@@ -57,73 +55,31 @@ const App = () => {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeSkill, setActiveSkill] = useState(null)
   const [status, setStatus] = useState('')
-  const [convertStatus, setConvertStatus] = useState('')
-  const [convertedUrl, setConvertedUrl] = useState('')
-  const [convertFile, setConvertFile] = useState(null)
   const formRef = useRef(null)
 
-  const handleConvert = async (e) => {
-    e.preventDefault()
-    if (!convertFile) return
-
-    setConvertStatus('converting')
-    setConvertedUrl('')
-
-    const formData = new FormData()
-    formData.append('file', convertFile)
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setStatus('sending');
+    
+    const formData = new FormData(event.target);
+    formData.append("access_key", "022eafcf-5a9b-4e49-af66-bfd22c27bd5d");
 
     try {
-      const res = await fetch('http://localhost:5000/api/convert', {
-        method: 'POST',
-        body: formData,
-      })
-      const data = await res.json()
-
-      if (res.ok) {
-        setConvertStatus('success')
-        setConvertedUrl(`http://localhost:5000${data.url}`)
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setStatus('sent');
+        event.target.reset();
       } else {
-        setConvertStatus('error')
-        console.error(data.message)
+        setStatus('error');
       }
     } catch (error) {
-      setConvertStatus('error')
-      console.error(error)
+      setStatus('error');
     }
-  }
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.initializeEmailJS?.()
-    }
-  }, [])
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setStatus('sending')
-
-    const publicKey = window.emailjsConfig?.publicKey || 'Eg01tvQpe-Wkx2qDp'
-
-    const templateParams = {
-      from_name: formRef.current.from_name.value,
-      from_email: formRef.current.from_email.value,
-      message: formRef.current.message.value,
-    }
-
-    emailjs
-      .send(
-        'service_lionu1l',
-        'template_7srssoj',
-        templateParams,
-        publicKey
-      )
-      .then(() => {
-        setStatus('sent')
-        formRef.current?.reset()
-      })
-      .catch(() => {
-        setStatus('error')
-      })
   }
 
   return (
@@ -228,14 +184,14 @@ const App = () => {
               <ul className="mt-6 space-y-4 text-slate-300">
                 <li>
                   <a
-                    href="https://www.google.com/maps/place/Villupuram,+Tamil+Nadu"
+                    href="https://www.google.com/maps/place/Kodambakkam,+Chennai,+Greater+Chennai,+Tamil+Nadu/@13.0505068,80.2115185,3394m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3a5266f066d7dc93:0xfaeae16b3a24c9c5!8m2!3d13.0521019!4d80.2255286!16s%2Fm%2F076vr4f?entry=ttu&g_ep=EgoyMDI2MDYyOS4wIKXMDSoASAFQAw%3D%3D"
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 rounded-2xl border border-slate-700/70 bg-slate-900/60 px-3 py-2 transition hover:border-cyan-400 hover:text-cyan-300"
                   >
                     <span className="text-lg">📍</span>
                     <span>
-                      <span className="font-semibold text-white">Location:</span> Villupuram, Tamil Nadu, India
+                      <span className="font-semibold text-white">Location:</span> Chennai Kodambakkam, Tamil Nadu, India
                     </span>
                   </a>
                 </li>
@@ -269,21 +225,19 @@ const App = () => {
                   key={skill.name}
                   type="button"
                   onClick={() => setActiveSkill(isActive ? null : skill.name)}
-                  className={`skill-card rounded-2xl px-4 py-3 text-left text-slate-100 transition hover:border-cyan-400 hover:bg-slate-900 ${isActive ? 'active' : ''}`}
+                  className={`skill-card px-5 py-2.5 text-left text-slate-100 transition hover:border-cyan-400 hover:bg-slate-900 ${isActive ? 'active' : ''}`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-white">{skill.name}</span>
-                    <span className="text-[11px] uppercase tracking-[0.25em] text-slate-400">
-                      {isActive ? '' : ''}
-                    </span>
+                    {isActive ? (
+                      <span className="font-bold text-cyan-300 text-sm">{skill.level}%</span>
+                    ) : (
+                      <span className="text-[11px] uppercase tracking-[0.25em] text-slate-400"></span>
+                    )}
                   </div>
                   {isActive ? (
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center justify-between text-sm text-slate-400">
-                        <span>Proficiency</span>
-                        <span className="font-semibold text-cyan-300">{skill.level}%</span>
-                      </div>
-                      <div className="bar-track">
+                    <div className="mt-2">
+                      <div className="bar-track h-1.5">
                         <div className="bar-fill" style={{ width: `${skill.level}%` }} />
                       </div>
                     </div>
@@ -329,127 +283,99 @@ const App = () => {
           </div>
         </section>
 
-        <section id="converter" className="section-card scroll-mt-24 mt-10 rounded-3xl p-8 shadow-xl shadow-slate-950/10 backdrop-blur-md md:p-12">
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-cyan-300">Tools</p>
-              <h2 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">Media Converter.</h2>
-            </div>
-            <p className="max-w-2xl text-slate-300">
-              Upload an image to convert it instantly (JPG → PNG, PNG → WebP, WebP → JPG).
-            </p>
-          </div>
-          
-          <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-lg shadow-slate-950/20">
-            <form onSubmit={handleConvert} className="space-y-5">
-              <label className="block text-sm font-medium text-slate-200">
-                Select File
-                <input
-                  type="file"
-                  onChange={(e) => setConvertFile(e.target.files[0])}
-                  required
-                  className="mt-3 block w-full text-sm text-slate-300 file:mr-4 file:rounded-full file:border-0 file:bg-cyan-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-950 hover:file:bg-cyan-400"
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={convertStatus === 'converting' || !convertFile}
-                className="inline-flex items-center justify-center rounded-full bg-cyan-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {convertStatus === 'converting' ? 'Converting...' : 'Convert File'}
-              </button>
-            </form>
-
-            {convertStatus === 'success' && convertedUrl && (
-              <div className="mt-6 rounded-2xl bg-slate-900 p-4 border border-cyan-500/30">
-                <p className="text-cyan-300 mb-3">Conversion successful!</p>
-                <a href={convertedUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-white bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-xl transition">
-                  <FiDownload /> Download Converted File
-                </a>
-              </div>
-            )}
-            {convertStatus === 'error' && (
-              <p className="mt-4 text-sm text-red-400">Error converting file. Make sure your server is running.</p>
-            )}
-          </div>
-        </section>
-
         <section id="contact" className="section-card scroll-mt-24 mt-10 rounded-3xl p-8 shadow-xl shadow-slate-950/10 backdrop-blur-md md:p-12">
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
             <div>
               <p className="text-cyan-300">Contact</p>
               <h2 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">Let's build something together.</h2>
               <p className="mt-5 text-slate-300 leading-8">
                 Have an idea or a project? Send a message and I will reply as soon as possible.
               </p>
-              <div className="info-card mt-8 space-y-4 rounded-3xl p-6 text-slate-200 shadow-lg shadow-slate-950/20">
-                <div className="flex items-center gap-3">
-                  <FiMail className="text-cyan-300" />
-                  <a href="mailto:email@example.com" className="transition hover:text-cyan-300">
+              <div className="info-card mt-8 space-y-5 rounded-3xl p-6 text-slate-200 shadow-lg shadow-slate-950/20">
+                <div className="flex items-center gap-4">
+                  <div className="flex w-6 shrink-0 justify-center">
+                    <FiMail className="text-cyan-300 text-xl" />
+                  </div>
+                  <a href="mailto:balajimuthu0107@gmail.com" className="transition hover:text-cyan-300 break-words">
                     balajimuthu0107@gmail.com
                   </a>
                 </div>
-                <div className="flex items-center gap-3">
-                  <FiPhone className="text-cyan-300" />
-                  <span>+91 8148145130</span>
+                <div className="flex items-center gap-4">
+                  <div className="flex w-6 shrink-0 justify-center">
+                    <FiPhone className="text-cyan-300 text-xl" />
+                  </div>
+                  <a href="tel:+918148145130" className="transition hover:text-cyan-300">
+                    +91 81481 45130
+                  </a>
                 </div>
-                <div className="flex items-center gap-3">
-                  <FiGithub className="text-cyan-300" />
-                  <a className="transition hover:text-cyan-300" href="https://github.com/balajimuthu0107/personal_portfolio.git" target="_blank" rel="noreferrer">
+                <div className="flex items-center gap-4">
+                  <div className="flex w-6 shrink-0 justify-center">
+                    <FiGithub className="text-cyan-300 text-xl" />
+                  </div>
+                  <a className="transition hover:text-cyan-300 break-words" href="https://github.com/balajimuthu0107/personal_portfolio" target="_blank" rel="noreferrer">
                     github.com/balajimuthu0107/personal_portfolio
                   </a>
                 </div>
-                <div className="flex items-center gap-3">
-                  <FiLinkedin className="text-cyan-300" />
-                  <a className="transition hover:text-cyan-300" href="https://linkedin.com/">
+                <div className="flex items-center gap-4">
+                  <div className="flex w-6 shrink-0 justify-center">
+                    <FiLinkedin className="text-cyan-300 text-xl" />
+                  </div>
+                  <a className="transition hover:text-cyan-300" href="https://www.linkedin.com/in/balajimuthu/" target="_blank" rel="noreferrer">
                     Balaji Muthu
                   </a>
                 </div>
               </div>
             </div>
-            <form ref={formRef} onSubmit={handleSubmit} className="space-y-5 rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-lg shadow-slate-950/20">
-              <label className="block text-sm font-medium text-slate-200">
-                Name
+            <form ref={formRef} onSubmit={handleSubmit} className="contact-form-container group">
+              <div className="absolute -inset-0.5 -z-10 rounded-3xl bg-gradient-to-br from-cyan-500/10 via-transparent to-blue-500/10 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"></div>
+              
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-300">Name</label>
                 <input
                   type="text"
-                  name="from_name"
+                  name="name"
                   placeholder="Your name"
                   required
-                  className="mt-3 w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400"
+                  className="w-full rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-slate-100 outline-none transition-all placeholder:text-slate-500 focus:border-cyan-400 focus:bg-slate-900 focus:ring-2 focus:ring-cyan-400/20"
                 />
-              </label>
-              <label className="block text-sm font-medium text-slate-200">
-                Email
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-300">Email</label>
                 <input
                   type="email"
-                  name="from_email"
+                  name="email"
                   placeholder="you@example.com"
                   required
-                  className="mt-3 w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400"
+                  className="w-full rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-slate-100 outline-none transition-all placeholder:text-slate-500 focus:border-cyan-400 focus:bg-slate-900 focus:ring-2 focus:ring-cyan-400/20"
                 />
-              </label>
-              <label className="block text-sm font-medium text-slate-200">
-                Message
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-300">Message</label>
                 <textarea
                   name="message"
-                  rows="5"
+                  rows="4"
                   placeholder="Your message"
                   required
-                  className="mt-3 w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400"
+                  className="h-32 w-full resize-none rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-slate-100 outline-none transition-all placeholder:text-slate-500 focus:border-cyan-400 focus:bg-slate-900 focus:ring-2 focus:ring-cyan-400/20"
                 />
-              </label>
-              <button
-                type="submit"
-                disabled={status === 'sending'}
-                className="inline-flex w-full items-center justify-center rounded-full bg-cyan-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {status === 'sending' ? 'Sending...' : 'Send message'}
-              </button>
+              </div>
+              <div className="mt-2">
+                <button
+                  type="submit"
+                  disabled={status === 'sending'}
+                  className="group/btn relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all hover:scale-[1.02] hover:shadow-cyan-500/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-150%)] group-hover/btn:duration-1000 group-hover/btn:[transform:skew(-12deg)_translateX(150%)]">
+                    <div className="relative h-full w-10 bg-white/20" />
+                  </div>
+                  <span className="relative">{status === 'sending' ? 'Sending...' : 'Send message'}</span>
+                </button>
+              </div>
               {status === 'sent' && (
-                <p className="text-sm text-cyan-300">Message sent! I&apos;ll reply soon.</p>
+                <p className="text-center text-sm font-medium text-cyan-400">Message sent! I&apos;ll reply soon.</p>
               )}
               {status === 'error' && (
-                <p className="text-sm text-red-400">Something went wrong. Please try again.</p>
+                <p className="text-center text-sm font-medium text-red-400">Something went wrong. Please try again.</p>
               )}
             </form>
           </div>
