@@ -37,10 +37,10 @@ const projects = [
     github: 'https://github.com/balajimuthu0107/Library-Management-System',
   },
   {
-    title: 'API Dashboard',
-    description: 'Interactive dashboard with charts, filters, and real-time updates.',
-    tags: ['React', 'API', 'Design'],
-    github: 'https://github.com/',
+    title: 'Billing System',
+    description: 'Interactive billing and invoice management system with real-time balance tracking, customer accounts, and receipt generation.',
+    tags: ['React', 'TypeScript', 'Firebase'],
+    github: 'https://github.com/balajimuthu0107/KKMBillingSystem',
   },
   {
     title: 'E-commerce UI',
@@ -312,8 +312,8 @@ const App = () => {
                   <div className="flex w-6 shrink-0 justify-center">
                     <FiGithub className="text-cyan-300 text-xl" />
                   </div>
-                  <a className="transition hover:text-cyan-300 break-words" href="https://github.com/balajimuthu0107/personal_portfolio" target="_blank" rel="noreferrer">
-                    github.com/balajimuthu0107/personal_portfolio
+                  <a className="transition hover:text-cyan-300 break-words" href="https://github.com/balajimuthu0107/portfolio_" target="_blank" rel="noreferrer">
+                    github.com/balajimuthu0107/portfolio_
                   </a>
                 </div>
                 <div className="flex items-center gap-4">
